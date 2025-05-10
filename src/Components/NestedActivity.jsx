@@ -1,6 +1,6 @@
 import {Button, Divider, Form, Input, InputNumber, Select} from "antd";
 import './NestedActivity.css';
-import {useState} from "react";
+import {useEffect, useState} from "react";
 
 const options = [
     { value: 'pipe', label: 'pipe' },
@@ -23,6 +23,9 @@ const NestedActivity = () => {
             }]
         }
     ]);
+    const [isDisabled, setIsDisabled] = useState(false);
+    const [errors, setErrors] = useState([]);
+
     const handleDelete = (parentId) => {
         setInitialActivityArray((prevState) => prevState.filter(item =>
             item.id !== parentId
@@ -101,106 +104,142 @@ const NestedActivity = () => {
         console.log('Formatted Data:', formattedData);
     }
 
-    const isDisabled = true;
-    let sum;
-    const errors = initialActivityArray.map((activity) => {
-        if(activity.weight === sum) {
+    const errorCalculation = () => {
+        setErrors([]);
+        setIsDisabled(false);
+
+        initialActivityArray.forEach((activity) => {
+            const parentWeight = activity.weight || 0;
+            let childrenSum = 0;
             
-        }
-     sum =  activity.children.weight + sum;
-    }
-    )
+            activity.children.forEach(child => {
+                childrenSum += child.weight || 0;
+            });
+    
+            if (parentWeight !== childrenSum) {
+                setIsDisabled(true);
+                setErrors(prev => [...prev, `Activity #${activity.id}: Parent weight (${parentWeight}%) does not match with the sum of sub item weights (${childrenSum}%)`]);
+            }
+        });
+    };
+
+    useEffect(() => {
+        errorCalculation();
+    }, [initialActivityArray]);
+
     return (
         <Form
             className={'form-container'}
             layout={'vertical'}
             onFinish={handleSubmit}
         >
-        <div className={'activity-header'}>
-            <h2 className={'title'}>NX MUI Testing - CP Checklist</h2>
-            <Button type="default" color={'danger'} variant={'outlined'} onClick={() => handleActivity()}>
-              + Add Activity
-            </Button>
-            <div className={'save-details-container'}>
-                <div className={isDisabled ? 'weight-mismatch' : 'weight-match' }>Weight 100%</div>
-                <Button type={'primary'} htmlType={'submit'}>
-                    save
+            <div className={'activity-header'}>
+                <h2 className={'title'}>NX MUI Testing - CP Checklist</h2>
+                <Button type="default" color={'danger'} variant={'outlined'} onClick={() => handleActivity()}>
+                    + Add Activity
                 </Button>
+                <div className={'save-details-container'}>
+                    <div className={isDisabled ? 'weight-mismatch' : 'weight-match'}>Weight 100%</div>
+                    <Button type={'primary'} htmlType={'submit'} disabled={isDisabled}>
+                        save
+                    </Button>
+                </div>
             </div>
-        </div>
-        <div className={'activity-body'}>
-            {
-                initialActivityArray.length &&
-                initialActivityArray.length > 0 ?
-                    initialActivityArray.map((activity, index) => {
-                        return (
-                            <div key={activity.id}>
-                                <div className={'parent-activity'}>
+            <div className={'activity-body'}>
+                {initialActivityArray.length > 0 ? (
+                    initialActivityArray.map((activity) => (
+                        <div key={activity.id}>
+                            <div className={'parent-activity'}>
+                                <Form.Item>
+                                    <p>#{activity.id}</p>
+                                </Form.Item>
+                                <Form.Item label={'Activity Name'} name={`activity-name-${activity.id}`}>
+                                    <Input placeholder={'Activity Name'} />
+                                </Form.Item>
+                                <Form.Item label={'Unit of Count'} name={`unitCount-${activity.id}`}>
+                                    <Select
+                                        placeholder={'Unit of Count'}
+                                        options={options}
+                                    />
+                                </Form.Item>
+                                <Form.Item label={'Weight'} name={`weight-${activity.id}`}>
+                                    <InputNumber 
+                                        max={100} 
+                                        placeholder={'Weight'} 
+                                        suffix={'%'} 
+                                        onChange={(value) => {
+                                            setInitialActivityArray(prevState => 
+                                                prevState.map(item => 
+                                                    item.id === activity.id 
+                                                        ? {...item, weight: value || 0}
+                                                        : item
+                                                )
+                                            );
+                                        }}
+                                    />
+                                </Form.Item>
+                                <Form.Item>
+                                    <Button type={'primary'} onClick={() => handleDelete(activity.id)}>
+                                        Delete
+                                    </Button>
+                                </Form.Item>
+                            </div>
+                            {activity?.children.length > 0 && activity?.children.map((item) => (
+                                <div key={item.id} className={'children-activities'}>
                                     <Form.Item>
-                                        <p>#{activity.id}</p>
+                                        <p>#{item.id}</p>
                                     </Form.Item>
-                                    <Form.Item label={'Activity Name'} name={`activity-name-${activity.id}`}>
+                                    <Form.Item label={'Activity Name'} name={`activityName-${item.id}`}>
                                         <Input placeholder={'Activity Name'} />
                                     </Form.Item>
-                                    <Form.Item label={'Unit of Count'} name={`unitCount-${activity.unitCount}`}>
+                                    <Form.Item label={'Unit of Count'} name={`unitCount-${item.id}`}>
                                         <Select
                                             placeholder={'Unit of Count'}
                                             options={options}
                                         />
                                     </Form.Item>
-                                    <Form.Item label={'Weight'} name={`weight-${activity.weight}`}>
-                                        <InputNumber max={100} placeholder={'Weight'} suffix={'%'} />
+                                    <Form.Item label={'Weight'} name={`weight-${item.id}`}>
+                                        <InputNumber 
+                                            max={100} 
+                                            suffix={'%'} 
+                                            onChange={(value) => {
+                                                setInitialActivityArray(prevState => 
+                                                    prevState.map(parent => 
+                                                        parent.id === activity.id
+                                                            ? {
+                                                                ...parent,
+                                                                children: parent.children.map(child =>
+                                                                    child.id === item.id
+                                                                        ? {...child, weight: value || 0}
+                                                                        : child
+                                                                )
+                                                            }
+                                                            : parent
+                                                    )
+                                                );
+                                            }}
+                                        />
                                     </Form.Item>
                                     <Form.Item>
-                                        <Button type={'primary'} onClick={() => handleDelete(activity.id)}>
+                                        <Button type={'primary'} onClick={() => handleChildDelete(activity.id, item.id)}>
                                             Delete
                                         </Button>
                                     </Form.Item>
                                 </div>
-                                <Form.ErrorList errors={errors} />
-                                {
-                                    activity?.children.length > 0 ?
-                                    activity?.children?.map((item, index) => (
-                                        <>
-                                            <div key={index} className={'children-activities'}>
-                                                <Form.Item>
-                                                    <p>#{item.id}</p>
-                                                </Form.Item>
-                                                <Form.Item label={'Activity Name'} name={`activityName-${item.id}`}>
-                                                    <Input placeholder={'Activity Name'} />
-                                                </Form.Item>
-                                                <Form.Item label={'Unit of Count'} name={`unitCount-${item.id}`}>
-                                                    <Select
-                                                        placeholder={'Unit of Count'}
-                                                        options={options}
-                                                    />
-                                                </Form.Item>
-                                                <Form.Item label={'Weight'} name={`weight-${item.id}`}>
-                                                    <InputNumber max={100} suffix={'%'} />
-                                                </Form.Item>
-                                                <Form.Item>
-                                                    <Button type={'primary'} onClick={() => handleChildDelete(activity.id, item.id)}>
-                                                        Delete
-                                                    </Button>
-                                                </Form.Item>
-                                            </div>
-                                        </>
-                                    )) : null
-                                }
-                                <Button  type="default" color={'danger'} variant={'outlined'} onClick={() => handleSubActivity(activity.id)}>
-                                    + Add Sub Activity
-                                </Button>
-                                <Divider />
-                            </div>
-                        )
-                    })
-                    :
+                            ))}
+                            <Button type="default" color={'danger'} variant={'outlined'} onClick={() => handleSubActivity(activity.id)}>
+                                + Add Sub Activity
+                            </Button>
+                            <Divider />
+                        </div>
+                    ))
+                ) : (
                     <div className="no-data">
                         <p className={'no-data-text'}>No Activities show</p>
                     </div>
-            }
-        </div>
+                )}
+            </div>
         </Form>
-    )
+    );
 }
 export default NestedActivity;
