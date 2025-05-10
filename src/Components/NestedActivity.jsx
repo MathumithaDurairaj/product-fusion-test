@@ -1,7 +1,6 @@
 import {Button, Divider, Form, Input, InputNumber, Select} from "antd";
 import './NestedActivity.css';
 import {useState} from "react";
-import {isDisabled} from "@testing-library/user-event/dist/utils";
 
 const options = [
     { value: 'pipe', label: 'pipe' },
@@ -14,13 +13,13 @@ const NestedActivity = () => {
         {
             id: Math.floor(Math.random() * 100),
             activityName: '',
-            unitCount: 0,
-            weight: '',
+            unitCount: '',
+            weight: 0,
             children: [{
                 id: Math.floor(Math.random() * 100),
                 activityName: '',
-                unitCount: 0,
-                weight: '',
+                unitCount: '',
+                weight: 0,
             }]
         }
     ]);
@@ -34,14 +33,14 @@ const NestedActivity = () => {
             {
                 id: Math.floor(Math.random() * 100),
                 activityName: '',
-                unitCount: 0,
-                weight: '',
+                unitCount: '',
+                weight: 0,
                 children: [
                     {
                         id: Math.floor(Math.random() * 100),
                         activityName: '',
-                        unitCount: 0,
-                        weight: '',
+                        unitCount: '',
+                        weight: 0,
                     }
                 ]
             }
@@ -59,8 +58,8 @@ const NestedActivity = () => {
                             {
                                 id: Math.floor(Math.random() * 100),
                                 activityName: '',
-                                unitCount: 0,
-                                weight: '',
+                                unitCount: '',
+                                weight: 0,
                             }
                         ]
                     }
@@ -83,7 +82,23 @@ const NestedActivity = () => {
     }
 
     const handleSubmit = (values) => {
-        console.log(values);
+        const formattedData = initialActivityArray.map((activity) => {
+            const parentData = {
+                id: activity.id,
+                activityName: values[`activity-name-${activity.id}`] || '',
+                unitCount: values[`unitCount-${activity.id}`] || '',
+                weight: values[`weight-${activity.id}`] || 0,
+                children: activity.children.map((child) => ({
+                    id: child.id,
+                    activityName: values[`activityName-${child.id}`] || '',
+                    unitCount: values[`unitCount-${child.id}`] || '',
+                    weight: values[`weight-${child.id}`] || 0
+                }))
+            };
+            return parentData;
+        });
+
+        console.log('Formatted Data:', formattedData);
     }
 
     const isDisabled = true;
@@ -99,7 +114,7 @@ const NestedActivity = () => {
         <Form
             className={'form-container'}
             layout={'vertical'}
-            onValuesChange={handleSubmit}
+            onFinish={handleSubmit}
         >
         <div className={'activity-header'}>
             <h2 className={'title'}>NX MUI Testing - CP Checklist</h2>
@@ -108,7 +123,7 @@ const NestedActivity = () => {
             </Button>
             <div className={'save-details-container'}>
                 <div className={isDisabled ? 'weight-mismatch' : 'weight-match' }>Weight 100%</div>
-                <Button type={'primary'} htmlType={'submit'} disabled={isDisabled}>
+                <Button type={'primary'} htmlType={'submit'}>
                     save
                 </Button>
             </div>
