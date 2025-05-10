@@ -1,0 +1,54 @@
+.form-container {
+    padding: 36px;
+    .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .save-details-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        .weight-mismatch {
+            color: red;
+        }
+        .weight-match {
+            color: green;
+        }
+    }
+    .activity-body {
+        height: 700px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+        .parent-activity {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            width: 60%;
+            gap: 8px;
+        }
+        .children-activities {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            width: 60%;
+            gap: 8px;
+            margin-left: 30px;
+        }
+    }
+    .no-data {
+        border: 1px solid #dfdfdf;
+        height: 100%;
+        width: 100%;
+        padding: 16px;
+        .no-data-text {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+}
